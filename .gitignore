@@ -1,7 +1,0 @@
-# Ignorar todo
-*
-.*
-
-# Permitir estructura
-!.gitignore
-!**/.gitkeep
