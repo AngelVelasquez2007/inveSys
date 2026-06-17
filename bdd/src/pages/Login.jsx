@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail, PackageCheck, ShieldCheck } from 'lucide-react'
 import { loginUsuario } from '../services/authService.js'
 import { apiError } from '../services/api.js'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [mostrarClave, setMostrarClave] = useState(false)
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
@@ -24,8 +26,9 @@ export default function Login() {
         contrasena,
       })
 
-      setMensaje('Inicio de sesión correcto. Token recibido desde el API.')
+      setMensaje('Inicio de sesión correcto. Redirigiendo al panel principal...')
       console.log('Respuesta del login:', respuesta)
+      setTimeout(() => navigate('/dashboard', { replace: true }), 600)
     } catch (error) {
       setError(apiError(error))
     } finally {

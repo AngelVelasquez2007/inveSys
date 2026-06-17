@@ -16,6 +16,20 @@ api.interceptors.request.use((config) => {
 })
 
 export function apiError(error) {
+  const status = error?.response?.status
+
+  if (status === 401) {
+    return 'No autorizado. Inicia sesión nuevamente.'
+  }
+
+  if (status === 404) {
+    return 'No se encontró el endpoint solicitado en el backend.'
+  }
+
+  if (status === 500) {
+    return 'Error interno del servidor. Intenta nuevamente.'
+  }
+
   return (
     error?.response?.data?.detail ||
     error?.response?.data?.message ||
