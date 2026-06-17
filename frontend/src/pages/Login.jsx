@@ -1,12 +1,36 @@
 import { useState } from 'react'
 import { Eye, EyeOff, Lock, Mail, PackageCheck, ShieldCheck } from 'lucide-react'
+import { loginUsuario } from '../services/authService.js'
+import { apiError } from '../services/api.js'
 
 export default function Login() {
   const [mostrarClave, setMostrarClave] = useState(false)
+  const [correo, setCorreo] = useState('')
+  const [contrasena, setContrasena] = useState('')
+  const [cargando, setCargando] = useState(false)
+  const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
 
-  function manejarEnvio(event) {
+  async function manejarEnvio(event) {
     event.preventDefault()
-    alert('Interfaz de inicio de sesión lista. La conexión con backend queda para una tarea posterior.')
+
+    setError('')
+    setMensaje('')
+    setCargando(true)
+
+    try {
+      const respuesta = await loginUsuario({
+        correo,
+        contrasena,
+      })
+
+      setMensaje('Inicio de sesión correcto. Token recibido desde el API.')
+      console.log('Respuesta del login:', respuesta)
+    } catch (error) {
+      setError(apiError(error))
+    } finally {
+      setCargando(false)
+    }
   }
 
   return (
@@ -29,8 +53,8 @@ export default function Login() {
           <h2>Gestiona productos, clientes e inventario desde una sola plataforma.</h2>
 
           <p>
-            Esta pantalla permite el ingreso visual al sistema. Más adelante se conectará
-            con el backend para validar usuarios, roles y permisos.
+            Esta pantalla ahora consume el API de login. El formulario envía el correo
+            y la contraseña al backend para validar el acceso del usuario.
           </p>
         </div>
 
@@ -38,16 +62,16 @@ export default function Login() {
           <div className="benefit-card">
             <ShieldCheck size={24} />
             <div>
-              <h3>Acceso seguro</h3>
-              <p>Ingreso pensado para usuarios autorizados del sistema.</p>
+              <h3>Consumo de API</h3>
+              <p>El formulario se conecta con el endpoint de autenticación.</p>
             </div>
           </div>
 
           <div className="benefit-card">
             <PackageCheck size={24} />
             <div>
-              <h3>Control de inventario</h3>
-              <p>Consulta y administración de la información principal del negocio.</p>
+              <h3>Sesión preparada</h3>
+              <p>Si el backend responde con token, se guarda en localStorage.</p>
             </div>
           </div>
         </div>
@@ -64,6 +88,18 @@ export default function Login() {
             <p>Ingresa tus datos para acceder al sistema.</p>
           </div>
 
+          {error && (
+            <div className="login-message login-message-error">
+              {error}
+            </div>
+          )}
+
+          {mensaje && (
+            <div className="login-message login-message-success">
+              {mensaje}
+            </div>
+          )}
+
           <label className="form-group">
             <span>Correo electrónico</span>
 
@@ -72,6 +108,8 @@ export default function Login() {
               <input
                 type="email"
                 placeholder="usuario@correo.com"
+                value={correo}
+                onChange={(event) => setCorreo(event.target.value)}
                 required
               />
             </div>
@@ -85,6 +123,8 @@ export default function Login() {
               <input
                 type={mostrarClave ? 'text' : 'password'}
                 placeholder="Ingresa tu contraseña"
+                value={contrasena}
+                onChange={(event) => setContrasena(event.target.value)}
                 minLength="6"
                 required
               />
@@ -108,12 +148,12 @@ export default function Login() {
             <a href="#">¿Olvidaste tu contraseña?</a>
           </div>
 
-          <button className="login-button" type="submit">
-            Ingresar
+          <button className="login-button" type="submit" disabled={cargando}>
+            {cargando ? 'Validando...' : 'Ingresar'}
           </button>
 
           <p className="login-note">
-            SCRUM-14: Diseño de la interfaz de inicio de sesión.
+            SCRUM-15: Consumo del API de inicio de sesión.
           </p>
         </form>
       </section>
