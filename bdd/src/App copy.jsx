@@ -1,8 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { createContext, useCallback, useContext, useState } from 'react'
-
 import Layout from './components/Layout.jsx'
-import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Productos from './pages/Productos.jsx'
 import Clientes from './pages/Clientes.jsx'
@@ -20,9 +18,7 @@ function ToastProvider({ children }) {
 
   const push = useCallback((msg, type = 'success') => {
     const id = Date.now()
-
     setToasts(current => [...current, { id, msg, type }])
-
     setTimeout(() => {
       setToasts(current => current.filter(toast => toast.id !== id))
     }, 3500)
@@ -31,7 +27,6 @@ function ToastProvider({ children }) {
   return (
     <ToastCtx.Provider value={push}>
       {children}
-
       <div className="toast-wrap">
         {toasts.map(toast => (
           <div key={toast.id} className={`toast toast-${toast.type}`}>
@@ -48,8 +43,6 @@ export default function App() {
     <ToastProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-
           <Route path="/" element={<Layout />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
@@ -58,8 +51,6 @@ export default function App() {
             <Route path="inventario" element={<Inventario />} />
             <Route path="auditoria" element={<Auditoria />} />
           </Route>
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>

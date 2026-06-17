@@ -1,6 +1,6 @@
 import { api } from './api.js'
 
-const LOGIN_ENDPOINT = '/auth/login'
+const LOGIN_ENDPOINT = import.meta.env.VITE_LOGIN_ENDPOINT || '/auth/login'
 
 export async function loginUsuario({ correo, contrasena }) {
   const { data } = await api.post(LOGIN_ENDPOINT, {
