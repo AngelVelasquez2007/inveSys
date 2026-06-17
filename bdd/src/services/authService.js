@@ -22,6 +22,28 @@ export async function loginUsuario({ correo, contrasena }) {
   return data
 }
 
+export function obtenerToken() {
+  return localStorage.getItem('token')
+}
+
+export function estaAutenticado() {
+  return Boolean(obtenerToken())
+}
+
+export function obtenerUsuario() {
+  const usuario = localStorage.getItem('usuario')
+
+  if (!usuario) {
+    return null
+  }
+
+  try {
+    return JSON.parse(usuario)
+  } catch {
+    return null
+  }
+}
+
 export function cerrarSesion() {
   localStorage.removeItem('token')
   localStorage.removeItem('usuario')
