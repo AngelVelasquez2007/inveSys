@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { createContext, useCallback, useContext, useState } from 'react'
 
 import Layout from './components/Layout.jsx'
@@ -8,6 +8,8 @@ import Productos from './pages/Productos.jsx'
 import Clientes from './pages/Clientes.jsx'
 import Inventario from './pages/Inventario.jsx'
 import Auditoria from './pages/Auditoria.jsx'
+import ProtectedRoute from './components/ProtectedRoute.jsx'
+import { hayToken } from './services/api.js'
 
 export const ToastCtx = createContext(null)
 
@@ -43,25 +45,29 @@ function ToastProvider({ children }) {
   )
 }
 
+function PublicRoute({ children }) {
+  if (hayToken()) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
+}
+
 export default function App() {
   return (
     <ToastProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="productos" element={<Productos />} />
-            <Route path="clientes" element={<Clientes />} />
-            <Route path="inventario" element={<Inventario />} />
-            <Route path="auditoria" element={<Auditoria />} />
-          </Route>
-
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="productos" element={<Productos />} />
+          <Route path="clientes" element={<Clientes />} />
+          <Route path="inventario" element={<Inventario />} />
+          <Route path="auditoria" element={<Auditoria />} />
+        </Route>
+        <Route path="*" element={<Navigate to={hayToken() ? '/dashboard' : '/login'} replace />} />
+      </Routes>
     </ToastProvider>
   )
 }

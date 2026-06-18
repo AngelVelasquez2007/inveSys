@@ -1,31 +1,27 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Lock, Mail, PackageCheck, ShieldCheck } from 'lucide-react'
 import { loginUsuario } from '../services/authService.js'
 import { apiError } from '../services/api.js'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [mostrarClave, setMostrarClave] = useState(false)
   const [correo, setCorreo] = useState('')
   const [contrasena, setContrasena] = useState('')
+  const [recordar, setRecordar] = useState(false)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState('')
-  const [mensaje, setMensaje] = useState('')
 
   async function manejarEnvio(event) {
     event.preventDefault()
 
     setError('')
-    setMensaje('')
     setCargando(true)
 
     try {
-      const respuesta = await loginUsuario({
-        correo,
-        contrasena,
-      })
-
-      setMensaje('Inicio de sesión correcto. Token recibido desde el API.')
-      console.log('Respuesta del login:', respuesta)
+      await loginUsuario({ correo, contrasena, recordar })
+      navigate('/')
     } catch (error) {
       setError(apiError(error))
     } finally {
@@ -62,16 +58,16 @@ export default function Login() {
           <div className="benefit-card">
             <ShieldCheck size={24} />
             <div>
-              <h3>Consumo de API</h3>
-              <p>El formulario se conecta con el endpoint de autenticación.</p>
+              <h3>Autenticación segura</h3>
+              <p>Contraseñas hasheadas con bcrypt y tokens JWT con expiración.</p>
             </div>
           </div>
 
           <div className="benefit-card">
             <PackageCheck size={24} />
             <div>
-              <h3>Sesión preparada</h3>
-              <p>Si el backend responde con token, se guarda en localStorage.</p>
+              <h3>Sesión persistente</h3>
+              <p>Token almacenado de forma segura con renovación automática.</p>
             </div>
           </div>
         </div>
@@ -94,12 +90,6 @@ export default function Login() {
             </div>
           )}
 
-          {mensaje && (
-            <div className="login-message login-message-success">
-              {mensaje}
-            </div>
-          )}
-
           <label className="form-group">
             <span>Correo electrónico</span>
 
@@ -110,6 +100,7 @@ export default function Login() {
                 placeholder="usuario@correo.com"
                 value={correo}
                 onChange={(event) => setCorreo(event.target.value)}
+                autoFocus
                 required
               />
             </div>
@@ -125,7 +116,7 @@ export default function Login() {
                 placeholder="Ingresa tu contraseña"
                 value={contrasena}
                 onChange={(event) => setContrasena(event.target.value)}
-                minLength="6"
+                minLength={6}
                 required
               />
 
@@ -141,20 +132,18 @@ export default function Login() {
 
           <div className="login-options">
             <label>
-              <input type="checkbox" />
+              <input
+                type="checkbox"
+                checked={recordar}
+                onChange={(e) => setRecordar(e.target.checked)}
+              />
               Recordarme
             </label>
-
-            <a href="#">¿Olvidaste tu contraseña?</a>
           </div>
 
           <button className="login-button" type="submit" disabled={cargando}>
             {cargando ? 'Validando...' : 'Ingresar'}
           </button>
-
-          <p className="login-note">
-            SCRUM-15: Consumo del API de inicio de sesión.
-          </p>
         </form>
       </section>
     </main>

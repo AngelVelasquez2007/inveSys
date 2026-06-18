@@ -1,21 +1,29 @@
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr, Field
 
+from .auth import router as auth_router, get_current_user, seed_admin
 from .database import get_conn
 
 app = FastAPI(title='InveSys API', version='1.0.0')
 
 app.add_middleware(
   CORSMiddleware,
-  allow_origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
+  allow_origins=['*'],
   allow_credentials=True,
   allow_methods=['*'],
   allow_headers=['*'],
 )
+
+app.include_router(auth_router)
+
+
+@app.on_event('startup')
+def startup():
+  seed_admin()
 
 
 class ProductoIn(BaseModel):
@@ -86,14 +94,14 @@ def health():
 
 
 @app.get('/catalogos')
-def catalogos():
+def catalogos(_usuario: dict = Depends(get_current_user)):
   categorias = fetch_all('select id, nombre from categorias order by nombre')
   proveedores = fetch_all('select id, nombre from proveedores order by nombre')
   return {'categorias': categorias, 'proveedores': proveedores}
 
 
 @app.get('/dashboard')
-def dashboard():
+def dashboard(_usuario: dict = Depends(get_current_user)):
   query = '''
     select
       (select count(*) from productos where activo) as productos,
@@ -114,7 +122,7 @@ def dashboard():
 
 
 @app.get('/productos')
-def listar_productos():
+def listar_productos(_usuario: dict = Depends(get_current_user)):
   return fetch_all('''
     select p.id, p.sku, p.nombre, p.precio, p.stock_actual, p.stock_minimo, p.activo,
            c.id as categoria_id, c.nombre as categoria,
@@ -128,7 +136,7 @@ def listar_productos():
 
 
 @app.post('/productos', status_code=201)
-def crear_producto(payload: ProductoIn):
+def crear_producto(payload: ProductoIn, _usuario: dict = Depends(get_current_user)):
   try:
     with get_conn() as conn:
       with conn.cursor() as cur:
@@ -152,7 +160,7 @@ def crear_producto(payload: ProductoIn):
 
 
 @app.put('/productos/{producto_id}')
-def actualizar_producto(producto_id: int, payload: ProductoUpdate):
+def actualizar_producto(producto_id: int, payload: ProductoUpdate, _usuario: dict = Depends(get_current_user)):
   query = '''
     update productos
     set nombre=%s, categoria_id=%s, precio=%s, stock_actual=%s, stock_minimo=%s, activo=%s,
@@ -189,7 +197,7 @@ def actualizar_producto(producto_id: int, payload: ProductoUpdate):
 
 
 @app.delete('/productos/{producto_id}')
-def eliminar_producto(producto_id: int):
+def eliminar_producto(producto_id: int, _usuario: dict = Depends(get_current_user)):
   with get_conn() as conn:
     with conn.cursor() as cur:
       cur.execute('call sp_eliminar_producto_logico(%s)', (producto_id,))
@@ -201,12 +209,12 @@ def eliminar_producto(producto_id: int):
 
 
 @app.get('/clientes')
-def listar_clientes():
+def listar_clientes(_usuario: dict = Depends(get_current_user)):
   return fetch_all('select * from clientes order by id')
 
 
 @app.post('/clientes', status_code=201)
-def crear_cliente(payload: ClienteIn):
+def crear_cliente(payload: ClienteIn, _usuario: dict = Depends(get_current_user)):
   query = '''
     insert into clientes(documento, nombre, correo, telefono, ciudad, activo)
     values (%s, %s, %s, %s, %s, %s)
@@ -219,7 +227,7 @@ def crear_cliente(payload: ClienteIn):
 
 
 @app.put('/clientes/{cliente_id}')
-def actualizar_cliente(cliente_id: int, payload: ClienteUpdate):
+def actualizar_cliente(cliente_id: int, payload: ClienteUpdate, _usuario: dict = Depends(get_current_user)):
   query = '''
     update clientes
     set nombre=%s, correo=%s, telefono=%s, ciudad=%s, activo=%s, updated_at=now()
@@ -230,12 +238,12 @@ def actualizar_cliente(cliente_id: int, payload: ClienteUpdate):
 
 
 @app.delete('/clientes/{cliente_id}')
-def eliminar_cliente(cliente_id: int):
+def eliminar_cliente(cliente_id: int, _usuario: dict = Depends(get_current_user)):
   return fetch_one('update clientes set activo=false, updated_at=now() where id=%s returning *', (cliente_id,))
 
 
 @app.get('/movimientos')
-def listar_movimientos():
+def listar_movimientos(_usuario: dict = Depends(get_current_user)):
   return fetch_all('''
     select m.id, m.tipo, m.cantidad, m.motivo, m.created_at,
            p.id as producto_id, p.sku, p.nombre as producto
@@ -246,7 +254,7 @@ def listar_movimientos():
 
 
 @app.post('/movimientos', status_code=201)
-def crear_movimiento(payload: MovimientoIn):
+def crear_movimiento(payload: MovimientoIn, _usuario: dict = Depends(get_current_user)):
   delta = payload.cantidad if payload.tipo in ('ENTRADA', 'AJUSTE') else -payload.cantidad
   with get_conn() as conn:
     try:
@@ -270,12 +278,12 @@ def crear_movimiento(payload: MovimientoIn):
 
 
 @app.delete('/movimientos/{movimiento_id}')
-def eliminar_movimiento(movimiento_id: int):
+def eliminar_movimiento(movimiento_id: int, _usuario: dict = Depends(get_current_user)):
   return fetch_one('delete from movimientos_inventario where id=%s returning *', (movimiento_id,))
 
 
 @app.get('/auditoria')
-def listar_auditoria():
+def listar_auditoria(_usuario: dict = Depends(get_current_user)):
   return fetch_all('''
     select id, usuario, accion, tabla_afectada, registro_id, valores_anteriores,
            valores_nuevos, ip_conexion, created_at

@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const api = axios.create({
   baseURL: '/api',
-  timeout: 8000,
+  timeout: 10000,
 })
 
 api.interceptors.request.use((config) => {
@@ -15,6 +15,22 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('usuario')
+
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+
+    return Promise.reject(error)
+  },
+)
+
 export function apiError(error) {
   return (
     error?.response?.data?.detail ||
@@ -22,4 +38,17 @@ export function apiError(error) {
     error?.message ||
     'No se pudo completar la solicitud'
   )
+}
+
+export function hayToken() {
+  const token = localStorage.getItem('token')
+
+  if (!token) return false
+
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp * 1000 > Date.now()
+  } catch {
+    return false
+  }
 }
