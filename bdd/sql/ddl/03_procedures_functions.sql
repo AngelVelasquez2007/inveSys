@@ -43,6 +43,10 @@ declare
   v_stock integer;
   v_tipo varchar(20);
 begin
+  if p_delta = 0 then
+    raise exception 'El delta no puede ser cero';
+  end if;
+
   select stock_actual + p_delta into v_stock
   from productos
   where id = p_producto_id and activo;

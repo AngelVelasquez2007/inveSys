@@ -7,13 +7,17 @@ create table roles (
 
 create table usuarios (
   id bigserial primary key,
-  rol_id bigint not null references roles(id),
   nombre varchar(120) not null,
-  correo varchar(160) not null unique,
+  correo varchar(255) not null unique,
+  contrasena_hash varchar(255) not null,
+  rol varchar(20) not null default 'OPERADOR'
+    check (rol in ('ADMIN', 'OPERADOR')),
   activo boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+create index idx_usuarios_correo on usuarios(correo);
 
 create table categorias (
   id bigserial primary key,

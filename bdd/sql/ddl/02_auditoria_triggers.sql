@@ -6,7 +6,7 @@ declare
   v_usuario text := coalesce(current_setting('app.user', true), current_user);
   v_registro text;
 begin
-  v_registro := coalesce((to_jsonb(coalesce(new, old))->>'id'), null);
+  v_registro := (to_jsonb(coalesce(new, old))->>'id');
 
   insert into auditoria (
     usuario,

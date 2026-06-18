@@ -10,17 +10,9 @@ insert into roles(nombre, descripcion) values
 ('Logistica', 'Coordina despachos'),
 ('Consulta', 'Acceso de solo lectura');
 
-insert into usuarios(rol_id, nombre, correo) values
-(1, 'Ana Perez', 'ana@invesys.test'),
-(2, 'Luis Gomez', 'luis@invesys.test'),
-(3, 'Marta Ruiz', 'marta@invesys.test'),
-(4, 'Carlos Diaz', 'carlos@invesys.test'),
-(5, 'Laura Rios', 'laura@invesys.test'),
-(6, 'Jorge Leon', 'jorge@invesys.test'),
-(7, 'Paula Mora', 'paula@invesys.test'),
-(8, 'Diego Silva', 'diego@invesys.test'),
-(9, 'Sofia Torres', 'sofia@invesys.test'),
-(10, 'Nicolas Vera', 'nicolas@invesys.test');
+-- Los usuarios se crean mediante la API y el seed_admin() del backend.
+-- Usuario por defecto: admin@invesys.com / Admin123! (creado automaticamente
+-- al iniciar el backend).
 
 insert into categorias(nombre, descripcion) values
 ('Pantallas', 'Monitores y displays'),
@@ -82,17 +74,17 @@ insert into clientes(documento, nombre, correo, telefono, ciudad) values
 ('CLI-009', 'Logistica Centro', 'info@logcentro.test', '3109999999', 'Ibague'),
 ('CLI-010', 'Colegio Horizonte', 'rectoria@horizonte.test', '3110000000', 'Manizales');
 
-insert into ordenes_venta(cliente_id, usuario_id, estado, fecha, total) values
-(1, 3, 'PAGADA', now() - interval '12 days', 1240000),
-(2, 3, 'DESPACHADA', now() - interval '11 days', 420000),
-(3, 3, 'PENDIENTE', now() - interval '10 days', 1020000),
-(4, 3, 'PAGADA', now() - interval '9 days', 280000),
-(5, 3, 'ANULADA', now() - interval '8 days', 520000),
-(6, 3, 'PAGADA', now() - interval '7 days', 190000),
-(7, 3, 'DESPACHADA', now() - interval '6 days', 890000),
-(8, 3, 'PAGADA', now() - interval '5 days', 360000),
-(9, 3, 'PENDIENTE', now() - interval '4 days', 300000),
-(10, 3, 'PAGADA', now() - interval '3 days', 760000);
+insert into ordenes_venta(cliente_id, estado, fecha, total) values
+(1, 'PAGADA', now() - interval '12 days', 1240000),
+(2, 'DESPACHADA', now() - interval '11 days', 420000),
+(3, 'PENDIENTE', now() - interval '10 days', 1020000),
+(4, 'PAGADA', now() - interval '9 days', 280000),
+(5, 'ANULADA', now() - interval '8 days', 520000),
+(6, 'PAGADA', now() - interval '7 days', 190000),
+(7, 'DESPACHADA', now() - interval '6 days', 890000),
+(8, 'PAGADA', now() - interval '5 days', 360000),
+(9, 'PENDIENTE', now() - interval '4 days', 300000),
+(10, 'PAGADA', now() - interval '3 days', 760000);
 
 insert into orden_items(orden_id, producto_id, cantidad, precio_unitario) values
 (1, 1, 2, 620000),
@@ -120,7 +112,7 @@ insert into movimientos_inventario(producto_id, tipo, cantidad, motivo) values
 
 insert into auditoria(usuario, accion, tabla_afectada, registro_id, valores_anteriores, valores_nuevos) values
 ('seed', 'INSERT', 'roles', '1', null, '{"nombre":"Administrador"}'),
-('seed', 'INSERT', 'usuarios', '1', null, '{"correo":"ana@invesys.test"}'),
+('seed', 'INSERT', 'usuarios', '1', null, '{"correo":"admin@invesys.com"}'),
 ('seed', 'INSERT', 'categorias', '1', null, '{"nombre":"Pantallas"}'),
 ('seed', 'INSERT', 'proveedores', '1', null, '{"nombre":"TecnoMayoristas SAS"}'),
 ('seed', 'INSERT', 'productos', '1', null, '{"sku":"PRD-001"}'),

@@ -84,13 +84,19 @@ def login(payload: LoginIn):
     if not payload.correo or not payload.contrasena:
         raise HTTPException(status_code=400, detail='Correo y contraseña requeridos')
 
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                'SELECT id, nombre, correo, contrasena_hash, rol, activo FROM usuarios WHERE correo=%s',
-                (payload.correo.strip().lower(),),
-            )
-            row = cur.fetchone()
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    'SELECT id, nombre, correo, contrasena_hash, rol, activo FROM usuarios WHERE correo=%s',
+                    (payload.correo.strip().lower(),),
+                )
+                row = cur.fetchone()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'Error de base de datos al iniciar sesión: {e}',
+        )
 
     if row is None:
         raise HTTPException(status_code=401, detail='Credenciales inválidas')
@@ -117,13 +123,19 @@ def login(payload: LoginIn):
 
 @router.get('/me', response_model=UsuarioOut)
 def me(usuario: dict = Depends(get_current_user)):
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                'SELECT id, nombre, correo, rol FROM usuarios WHERE id=%s AND activo',
-                (usuario['id'],),
-            )
-            row = cur.fetchone()
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    'SELECT id, nombre, correo, rol FROM usuarios WHERE id=%s AND activo',
+                    (usuario['id'],),
+                )
+                row = cur.fetchone()
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f'Error de base de datos al obtener usuario: {e}',
+        )
     if row is None:
         raise HTTPException(status_code=404, detail='Usuario no encontrado')
     return row
