@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import jwt
 from jwt import PyJWTError
 from passlib.context import CryptContext
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .database import get_conn
 
@@ -17,7 +17,7 @@ SECRET_KEY = os.getenv('JWT_SECRET', 'cambiar_en_produccion')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv('JWT_EXPIRE_MINUTES', '480'))
 
-pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
+pwd_context = CryptContext(schemes=['pbkdf2_sha256'], deprecated='auto')
 security = HTTPBearer(auto_error=False)
 
 router = APIRouter(prefix='/auth', tags=['auth'])
@@ -26,6 +26,12 @@ router = APIRouter(prefix='/auth', tags=['auth'])
 class LoginIn(BaseModel):
     correo: str
     contrasena: str
+
+
+class RegistroIn(BaseModel):
+    nombre: str
+    correo: str
+    contrasena: str = Field(min_length=6, max_length=128)
 
 
 class UsuarioOut(BaseModel):
@@ -77,6 +83,40 @@ def seed_admin():
                     print('Usuario admin creado: admin@invesys.com / Admin123!')
     except Exception as e:
         print(f'No se pudo crear admin por defecto: {e}')
+
+
+@router.post('/register', status_code=201)
+def register(payload: RegistroIn):
+    if not payload.nombre or not payload.correo or not payload.contrasena:
+        raise HTTPException(status_code=400, detail='Todos los campos son requeridos')
+
+    if len(payload.nombre.strip()) < 3:
+        raise HTTPException(status_code=400, detail='El nombre debe tener al menos 3 caracteres')
+
+    if len(payload.contrasena) < 6:
+        raise HTTPException(status_code=400, detail='La contraseña debe tener al menos 6 caracteres')
+
+    correo = payload.correo.strip().lower()
+
+    try:
+        with get_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT id FROM usuarios WHERE correo=%s', (correo,))
+                if cur.fetchone():
+                    raise HTTPException(status_code=409, detail='El correo ya está registrado')
+
+                hash_ = pwd_context.hash(payload.contrasena)
+                cur.execute(
+                    'INSERT INTO usuarios (nombre, correo, contrasena_hash, rol) VALUES (%s, %s, %s, %s)',
+                    (payload.nombre.strip(), correo, hash_, 'OPERADOR'),
+                )
+                conn.commit()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error al registrar usuario: {e}')
+
+    return {'mensaje': 'Cuenta creada correctamente'}
 
 
 @router.post('/login')

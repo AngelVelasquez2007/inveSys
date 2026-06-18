@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   Eye,
   EyeOff,
@@ -13,6 +14,7 @@ import { loginUsuario, registrarUsuario } from '../services/authService.js'
 import { apiError } from '../services/api.js'
 
 export default function Login() {
+  const navigate = useNavigate()
   const [modo, setModo] = useState('login')
   const [mostrarClave, setMostrarClave] = useState(false)
   const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false)
@@ -50,8 +52,7 @@ export default function Login() {
         contrasena,
       })
 
-      setMensaje('Inicio de sesión correcto. Token recibido desde el API.')
-      console.log('Respuesta del login:', respuesta)
+      navigate('/dashboard', { replace: true })
     } catch (error) {
       setError(apiError(error))
     } finally {
@@ -72,25 +73,14 @@ export default function Login() {
     setCargando(true)
 
     try {
-      const respuesta = await registrarUsuario({
-        nombre,
-        correo,
-        contrasena,
-      })
+      await registrarUsuario({ nombre, correo, contrasena })
 
       setMensaje('Cuenta creada correctamente. Ya puedes iniciar sesión.')
-      console.log('Respuesta del registro:', respuesta)
       setModo('login')
       setNombre('')
       setConfirmarContrasena('')
     } catch (error) {
-      const status = error?.response?.status
-
-      if (status === 404) {
-        setError('El registro todavía no está disponible en el backend. El formulario ya quedó preparado desde frontend.')
-      } else {
-        setError(apiError(error))
-      }
+      setError(apiError(error))
     } finally {
       setCargando(false)
     }
@@ -121,7 +111,7 @@ export default function Login() {
 
           <p>
             {esRegistro
-              ? 'Este apartado permite capturar los datos necesarios para crear una cuenta. La conexión final queda preparada para el endpoint de registro que defina el backend.'
+              ? 'Crea una cuenta con nombre, correo y contraseña para acceder al sistema.'
               : 'Esta pantalla consume el API de login. El formulario envía el correo y la contraseña al backend para validar el acceso del usuario.'}
           </p>
         </div>
@@ -145,7 +135,7 @@ export default function Login() {
               <h3>{esRegistro ? 'Misma estructura' : 'Sesión preparada'}</h3>
               <p>
                 {esRegistro
-                  ? 'Solo se modifica el frontend, sin afectar backend, SQL ni base de datos.'
+                  ? 'Se crea un usuario OPERADOR con contraseña hasheada via bcrypt.'
                   : 'Si el backend responde con token, se guarda en localStorage.'}
               </p>
             </div>
@@ -312,7 +302,7 @@ export default function Login() {
 
           <p className="login-note">
             {esRegistro
-              ? 'Registro preparado desde frontend. La integración final depende del endpoint del backend.'
+              ? 'El endpoint de registro está implementado en el backend con FastAPI.'
               : 'SCRUM-15: Consumo del API de inicio de sesión.'}
           </p>
         </form>

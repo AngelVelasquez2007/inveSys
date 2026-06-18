@@ -35,7 +35,8 @@ $$;
 create or replace procedure sp_actualizar_stock_producto(
   p_producto_id bigint,
   p_delta integer,
-  p_motivo varchar
+  p_motivo varchar,
+  p_tipo varchar default null
 )
 language plpgsql
 as $$
@@ -63,7 +64,7 @@ begin
   set stock_actual = v_stock, updated_at = now()
   where id = p_producto_id;
 
-  v_tipo := case when p_delta < 0 then 'SALIDA' when p_delta > 0 then 'ENTRADA' else 'AJUSTE' end;
+  v_tipo := coalesce(p_tipo, case when p_delta < 0 then 'SALIDA' else 'ENTRADA' end);
 
   insert into movimientos_inventario(producto_id, tipo, cantidad, motivo)
   values (p_producto_id, v_tipo, abs(p_delta), p_motivo);

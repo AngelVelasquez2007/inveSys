@@ -75,7 +75,7 @@ create table clientes (
 
 create table ordenes_venta (
   id bigserial primary key,
-  cliente_id bigint not null references clientes(id),
+  cliente_id bigint references clientes(id),
   usuario_id bigint references usuarios(id),
   estado varchar(20) not null default 'PENDIENTE'
     check (estado in ('PENDIENTE', 'PAGADA', 'ANULADA', 'DESPACHADA')),

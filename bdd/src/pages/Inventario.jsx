@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ArrowUpFromLine, Plus, Trash2, X } from 'lucide-react'
+import { AlertTriangle, ArrowDownToLine, ArrowUpFromLine, Plus, Trash2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useToast } from '../App.jsx'
 import { api, apiError } from '../services/api.js'
@@ -14,15 +14,17 @@ export default function Inventario() {
   const toast = useToast()
   const [movimientos, setMovimientos] = useState([])
   const [productos, setProductos] = useState([])
+  const [bajoStock, setBajoStock] = useState([])
   const [form, setForm] = useState(emptyForm)
   const [modalOpen, setModalOpen] = useState(false)
   const [error, setError] = useState('')
 
   function load() {
-    Promise.all([api.get('/movimientos'), api.get('/productos')])
-      .then(([movimientosRes, productosRes]) => {
+    Promise.all([api.get('/movimientos'), api.get('/productos'), api.get('/dashboard')])
+      .then(([movimientosRes, productosRes, dashboardRes]) => {
         setMovimientos(movimientosRes.data)
         setProductos(productosRes.data.filter(producto => producto.activo))
+        setBajoStock(dashboardRes.data?.bajo_stock || [])
         setError('')
       })
       .catch(err => setError(apiError(err)))
@@ -66,7 +68,7 @@ export default function Inventario() {
       <header className="page-header">
         <div>
           <h1 className="page-title">Inventario</h1>
-          <p className="page-subtitle">Entradas, salidas y ajustes con validacion de stock.</p>
+          <p className="page-subtitle">Entradas y salidas con validacion de stock.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
           <Plus size={16} />
@@ -75,6 +77,24 @@ export default function Inventario() {
       </header>
 
       {error && <div className="alert alert-danger mb-4">{error}</div>}
+
+      {bajoStock.length > 0 && (
+        <section className="card" style={{ marginBottom: 16, borderLeft: '4px solid var(--danger)' }}>
+          <div className="card-body">
+            <div className="flex flex-center gap-2 mb-3">
+              <AlertTriangle size={18} color="var(--danger)" />
+              <strong style={{ fontSize: '.9rem' }}>Productos con stock bajo ({bajoStock.length})</strong>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {bajoStock.map(p => (
+                <span key={p.id} className="badge badge-yellow" style={{ fontSize: '.8rem', padding: '4px 10px' }}>
+                  {p.sku} — {p.nombre}: {p.stock_actual}/{p.stock_minimo}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="card">
         <div className="table-wrap">
@@ -151,7 +171,6 @@ export default function Inventario() {
                   <select className="form-control" value={form.tipo} onChange={event => updateField('tipo', event.target.value)}>
                     <option value="ENTRADA">Entrada</option>
                     <option value="SALIDA">Salida</option>
-                    <option value="AJUSTE">Ajuste</option>
                   </select>
                 </label>
                 <label className="form-group">

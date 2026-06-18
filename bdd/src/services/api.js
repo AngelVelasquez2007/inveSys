@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 30000,
 })
 
 api.interceptors.request.use((config) => {
@@ -32,6 +32,10 @@ api.interceptors.response.use(
 )
 
 export function apiError(error) {
+  if (error?.code === 'ECONNABORTED') {
+    return 'El servidor no respondió a tiempo. Verifica que FastAPI esté corriendo en el puerto 8000.'
+  }
+
   return (
     error?.response?.data?.detail ||
     error?.response?.data?.message ||

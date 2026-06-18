@@ -5,6 +5,9 @@ import Layout from './components/Layout.jsx'
 import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Productos from './pages/Productos.jsx'
+import Categorias from './pages/Categorias.jsx'
+import Proveedores from './pages/Proveedores.jsx'
+import Ventas from './pages/Ventas.jsx'
 import Clientes from './pages/Clientes.jsx'
 import Inventario from './pages/Inventario.jsx'
 import Auditoria from './pages/Auditoria.jsx'
@@ -62,6 +65,9 @@ export default function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="productos" element={<Productos />} />
+          <Route path="categorias" element={<Categorias />} />
+          <Route path="proveedores" element={<Proveedores />} />
+          <Route path="ventas" element={<Ventas />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="inventario" element={<Inventario />} />
           <Route path="auditoria" element={<Auditoria />} />
