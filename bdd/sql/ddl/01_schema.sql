@@ -22,7 +22,7 @@ create index idx_usuarios_correo on usuarios(correo);
 create table categorias (
   id bigserial primary key,
   nombre varchar(80) not null unique,
-  descripcion text,
+  descripcion text,Z
   created_at timestamptz not null default now()
 );
 
