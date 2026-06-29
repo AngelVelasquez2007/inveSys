@@ -1,7 +1,8 @@
-import { Bookmark, Edit, Plus, Search, Trash2, X } from 'lucide-react'
+import { Barcode, Bookmark, Camera, Edit, Plus, Search, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useToast } from '../App.jsx'
 import { api, apiError } from '../services/api.js'
+import BarcodeScanner from '../components/BarcodeScanner.jsx'
 
 const emptyForm = {
   sku: '',
@@ -12,6 +13,7 @@ const emptyForm = {
   stock_actual: '',
   stock_minimo: '',
   activo: true,
+  codigo_barras: '',
 }
 
 const emptyCatForm = { nombre: '', descripcion: '' }
@@ -26,6 +28,7 @@ export default function Productos() {
   const [modalOpen, setModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [scannerOpen, setScannerOpen] = useState(false)
 
   // Categories modal state
   const [catModalOpen, setCatModalOpen] = useState(false)
@@ -84,6 +87,7 @@ export default function Productos() {
       stock_actual: producto.stock_actual,
       stock_minimo: producto.stock_minimo,
       activo: producto.activo,
+      codigo_barras: producto.codigo_barras || '',
     })
     setModalOpen(true)
   }
@@ -216,6 +220,7 @@ export default function Productos() {
                 <th>Precio</th>
                 <th>Stock</th>
                 <th>Estado</th>
+                <th>Código barras</th>
                 <th className="text-right">Acciones</th>
               </tr>
             </thead>
@@ -233,6 +238,9 @@ export default function Productos() {
                       {producto.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
+                  <td style={{ fontFamily: 'monospace', fontSize: '.8rem' }}>
+                    {producto.codigo_barras || '-'}
+                  </td>
                   <td className="text-right">
                     <button className="btn-icon" onClick={() => openEdit(producto)} title="Editar">
                       <Edit size={15} />
@@ -245,7 +253,7 @@ export default function Productos() {
               ))}
               {!loading && filtrados.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Aún no hay productos registrados. Presiona "Nuevo producto" para comenzar.</td>
+                  <td colSpan="9" className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Aún no hay productos registrados. Presiona "Nuevo producto" para comenzar.</td>
                 </tr>
               )}
             </tbody>
@@ -303,6 +311,25 @@ export default function Productos() {
                   <input className="form-control" type="number" min="0" required value={form.stock_minimo} onChange={event => updateField('stock_minimo', event.target.value)} />
                 </label>
               </div>
+              <div className="form-row">
+                <label className="form-group">
+                  <span className="form-label">Código de barras</span>
+                  <div className="input-box" style={{ display: 'flex', gap: 4 }}>
+                    <Barcode size={16} style={{ flexShrink: 0 }} />
+                    <input
+                      className="form-control"
+                      placeholder="EAN-13"
+                      maxLength="50"
+                      value={form.codigo_barras}
+                      onChange={event => updateField('codigo_barras', event.target.value)}
+                      style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', fontSize: 'inherit', color: 'inherit' }}
+                    />
+                    <button type="button" className="btn-icon" onClick={() => setScannerOpen(true)} title="Escanear código">
+                      <Camera size={16} />
+                    </button>
+                  </div>
+                </label>
+              </div>
               <label className="check-row">
                 <input type="checkbox" checked={form.activo} onChange={event => updateField('activo', event.target.checked)} />
                 Producto activo
@@ -317,6 +344,16 @@ export default function Productos() {
       )}
 
       {/* ─── Categories modal ─────────────────────── */}
+      {scannerOpen && (
+        <BarcodeScanner
+          onScan={(code) => {
+            updateField('codigo_barras', code)
+            setScannerOpen(false)
+          }}
+          onClose={() => setScannerOpen(false)}
+        />
+      )}
+
       {catModalOpen && (
         <div className="modal-overlay">
           <div className="modal" style={{ maxWidth: 600 }}>

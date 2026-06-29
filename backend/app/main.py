@@ -84,6 +84,7 @@ class ProductoIn(BaseModel):
   stock_actual: int = Field(ge=0)
   stock_minimo: int = Field(ge=0)
   activo: bool = True
+  codigo_barras: str | None = Field(default=None, max_length=50)
 
 
 class ProductoUpdate(BaseModel):
@@ -94,6 +95,7 @@ class ProductoUpdate(BaseModel):
   stock_actual: int = Field(ge=0)
   stock_minimo: int = Field(ge=0)
   activo: bool = True
+  codigo_barras: str | None = Field(default=None, max_length=50)
 
 
 class ClienteIn(BaseModel):
@@ -388,7 +390,8 @@ def dashboard(usuario: dict = Depends(get_current_user)):
 def listar_productos(usuario: dict = Depends(get_current_user)):
   extra, params = where_sucursal(usuario, 'p')
   return fetch_all(f'''
-    select p.id, p.sku, p.nombre, p.precio, p.stock_actual, p.stock_minimo, p.activo,
+    select p.id, p.sku, p.nombre, p.precio, p.stock_actual, p.stock_minimo,
+           p.activo, p.codigo_barras,
            c.id as categoria_id, c.nombre as categoria,
            pr.id as proveedor_id, pr.nombre as proveedor
     from productos p
@@ -419,6 +422,9 @@ def crear_producto(payload: ProductoIn, usuario: dict = Depends(get_current_user
             payload.activo,
           ),
         )
+        if payload.codigo_barras:
+          cur.execute('UPDATE productos SET codigo_barras=%s WHERE sku=%s',
+                       (payload.codigo_barras.strip(), payload.sku.upper()))
         if sid:
           cur.execute('UPDATE productos SET sucursal_id=%s WHERE sku=%s', (sid, payload.sku.upper()))
         cur.execute('select * from productos where sku=%s', (payload.sku.upper(),))
@@ -431,8 +437,8 @@ def crear_producto(payload: ProductoIn, usuario: dict = Depends(get_current_user
 def actualizar_producto(producto_id: int, payload: ProductoUpdate, _usuario: dict = Depends(get_current_user)):
   query = '''
     update productos
-    set nombre=%s, categoria_id=%s, precio=%s, stock_actual=%s, stock_minimo=%s, activo=%s,
-        updated_at=now()
+    set nombre=%s, categoria_id=%s, precio=%s, stock_actual=%s, stock_minimo=%s,
+        activo=%s, codigo_barras=%s, updated_at=now()
     where id=%s
     returning *
   '''
@@ -447,6 +453,7 @@ def actualizar_producto(producto_id: int, payload: ProductoUpdate, _usuario: dic
           payload.stock_actual,
           payload.stock_minimo,
           payload.activo,
+          payload.codigo_barras,
           producto_id,
         ),
       )
@@ -478,6 +485,22 @@ def eliminar_producto(producto_id: int, _usuario: dict = Depends(get_current_use
       if row is None:
         raise HTTPException(status_code=404, detail='Registro no encontrado')
       return row
+
+
+@app.get('/productos/codigo-barras/{codigo}')
+def buscar_por_codigo_barras(codigo: str, usuario: dict = Depends(get_current_user)):
+  extra, params = where_sucursal(usuario, 'p')
+  row = fetch_one(f'''
+    select p.id, p.sku, p.nombre, p.precio, p.stock_actual, p.stock_minimo,
+           p.activo, p.codigo_barras,
+           c.id as categoria_id, c.nombre as categoria
+    from productos p
+    join categorias c on c.id = p.categoria_id
+    where p.codigo_barras=%s and p.activo{extra}
+  ''', (codigo.strip(), *params))
+  if row is None:
+    raise HTTPException(status_code=404, detail='Producto no encontrado')
+  return row
 
 
 # ─── Clientes ───────────────────────────────────────────────

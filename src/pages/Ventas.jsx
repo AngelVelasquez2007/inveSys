@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useToast } from '../App.jsx'
 import { api, apiError } from '../services/api.js'
+import { useBarcodeScanner } from '../hooks/useBarcodeScanner.js'
 
 function today() { return new Date().toISOString().split('T')[0] }
 
@@ -77,12 +78,28 @@ function OperadorPos({ toast }) {
 
   // ─── POS logic ───────────────────────────────
 
+  function buscarEnCarrito(codigo) {
+    const term = codigo.toLowerCase().trim()
+    const encontrado = productos.find(p =>
+      p.sku.toLowerCase() === term ||
+      p.codigo_barras?.toLowerCase() === term,
+    )
+    if (encontrado) {
+      agregarAlCarrito(encontrado)
+    } else {
+      toast('Producto no encontrado', 'error')
+    }
+  }
+
+  useBarcodeScanner({ onScan: buscarEnCarrito, enabled: mostrandoPos })
+
   const productosBusqueda = useMemo(() => {
     const term = busqueda.toLowerCase().trim()
     if (!term) return []
     return productos.filter(p =>
       p.nombre.toLowerCase().includes(term) ||
-      p.sku.toLowerCase().includes(term),
+      p.sku.toLowerCase().includes(term) ||
+      (p.codigo_barras && p.codigo_barras.toLowerCase().includes(term)),
     ).slice(0, 8)
   }, [busqueda, productos])
 
