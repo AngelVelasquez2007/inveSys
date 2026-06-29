@@ -23,14 +23,14 @@ export default function Setup() {
 
     try {
       const testUrl = url.replace(/\/+$/, '')
-      const { data } = await axios.get(`${testUrl}/docs`, { timeout: 10000 })
+      const { data } = await axios.get(`${testUrl}/docs`, { timeout: 90000 })
       if (data) {
         setEstado('ok')
       }
     } catch (err) {
       try {
         const testUrl = url.replace(/\/+$/, '')
-        await axios.get(`${testUrl}/auth/me`, { timeout: 10000 })
+        await axios.get(`${testUrl}/auth/me`, { timeout: 90000 })
         setEstado('ok')
       } catch {
         setEstado('error')
@@ -104,6 +104,12 @@ export default function Setup() {
             <div className="login-message login-message-error">{error}</div>
           )}
 
+          {probando && (
+            <div className="login-message" style={{ background: '#fef3c7', color: '#92400e', padding: '10px 14px', borderRadius: 8, marginBottom: 12, fontSize: 14, lineHeight: 1.5 }}>
+              El servidor puede tardar hasta 1 minuto en responder si estaba inactivo. Esperando...
+            </div>
+          )}
+
           {estado === 'ok' && (
             <div className="login-message login-message-success">
               <Check size={16} style={{ marginRight: 6 }} />
@@ -138,7 +144,7 @@ export default function Setup() {
             disabled={probando || !url.startsWith('http')}
             style={{ marginBottom: 10 }}
           >
-            {probando ? 'Probando conexión...' : 'Probar conexión'}
+            {probando ? 'Conectando... (hasta 1 min)' : 'Probar conexión'}
           </button>
 
           <button
