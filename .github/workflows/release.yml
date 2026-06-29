@@ -28,11 +28,35 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: npx tauri build
 
-      - name: Upload MSI
+      - name: Generate latest.json
+        run: |
+          $msi = Get-ChildItem -Path src-tauri/target/release/bundle/msi/*.msi | Select-Object -First 1
+          $sig = Get-ChildItem -Path src-tauri/target/release/bundle/msi/*.sig | Select-Object -First 1
+          $version = "${{ github.ref_name }}".TrimStart('v')
+          $sigContent = Get-Content $sig.FullName -Raw
+          $msiName = $msi.Name
+
+          $json = @{
+            version = $version
+            notes = "Release ${{ github.ref_name }}"
+            pub_date = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+            platforms = @{
+              "windows-x86_64" = @{
+                signature = $sigContent.Trim()
+                url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$msiName"
+              }
+            }
+          }
+          $json | ConvertTo-Json -Depth 10 | Set-Content -Path latest.json -Force
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: InveSys-Windows
-          path: src-tauri/target/release/bundle/msi/*.msi
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msi/*.sig
+            latest.json
 
   create-release:
     needs: build-windows
@@ -48,5 +72,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: InveSys-Windows/*.msi
+          files: |
+            InveSys-Windows/*.msi
+            InveSys-Windows/*.sig
+            InveSys-Windows/latest.json
           generate_release_notes: true
