@@ -53,7 +53,12 @@ function OperadorPos({ toast }) {
   const [descuentoId, setDescuentoId] = useState(null)
 
   function load() {
-    Promise.all([api.get('/ordenes'), api.get('/clientes'), api.get('/productos'), api.get('/descuentos/activos')])
+    Promise.all([
+      api.get('/ordenes').catch(() => ({ data: [] })),
+      api.get('/clientes').catch(() => ({ data: [] })),
+      api.get('/productos').catch(() => ({ data: [] })),
+      api.get('/descuentos/activos').catch(() => ({ data: [] })),
+    ])
       .then(([ordenesRes, clientesRes, productosRes, descRes]) => {
         setOrdenes(ordenesRes.data)
         setClientes(clientesRes.data.filter(c => c.activo))
