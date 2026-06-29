@@ -97,56 +97,54 @@ InveSys es una aplicación web full-stack para la gestión integral de inventari
 ## Estructura del repositorio
 
 ```
-├── vercel.json         # Configuración de despliegue en Vercel
-├── bdd/
-│   ├── backend/
-│   │   ├── app/
-│   │   │   ├── __init__.py
-│   │   │   ├── main.py            # Endpoints REST (productos, clientes, ventas, etc.)
-│   │   │   ├── auth.py            # Login, registro, JWT y middleware de autenticación
-│   │   │   ├── database.py        # Conexión a PostgreSQL (psycopg3)
-│   │   │   └── reportes.py        # Generación de reportes PDF (FPDF2)
-│   │   ├── requirements.txt       # Dependencias de Python
-│   │   └── .env.example           # Plantilla de variables de entorno del backend
-│   ├── sql/
-│   │   ├── ddl/
-│   │   │   ├── 01_schema.sql                 # Definición de tablas, PK, FK, CHECK e índices
-│   │   │   ├── 02_auditoria_triggers.sql     # Función y triggers de auditoría automática
-│   │   │   ├── 03_procedures_functions.sql   # Procedimientos y funciones almacenadas
-│   │   │   └── 04_migrar_usuarios.sql        # Migración para esquemas antiguos de usuarios
-│   │   ├── dml/
-│   │   │   └── 01_seed.sql                   # Datos iniciales de prueba
-│   │   ├── queries/
-│   │   │   └── 01_consultas_demostracion.sql # Consultas de demostración del modelo
-│   │   └── README.md                         # Orden de ejecución de los scripts SQL
-│   ├── docs/                       # Documentación del proyecto (manuales, fichas, análisis)
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Layout.jsx          # Estructura general con menú lateral
-│   │   │   └── ProtectedRoute.jsx  # Protección de rutas autenticadas
-│   │   ├── pages/
-│   │   │   ├── Login.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Productos.jsx
-│   │   │   ├── Categorias.jsx
-│   │   │   ├── Proveedores.jsx
-│   │   │   ├── Ventas.jsx
-│   │   │   ├── Clientes.jsx
-│   │   │   ├── Inventario.jsx
-│   │   │   └── Auditoria.jsx
-│   │   ├── services/
-│   │   │   ├── api.js              # Cliente Axios + interceptores (token, errores)
-│   │   │   └── authService.js      # Login, registro y manejo de sesión
-│   │   ├── assets/
-│   │   ├── App.jsx                 # Enrutamiento principal y contexto de notificaciones
-│   │   ├── App.css
-│   │   ├── index.css
-│   │   └── main.jsx
-│   ├── public/
-│   ├── index.html
-│   ├── package.json
-│   ├── vite.config.js              # Configuración de Vite + proxy hacia el backend
-│   └── vercel.json                 # Configuración de Vercel para el frontend
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py                # Endpoints REST (productos, clientes, ventas, etc.)
+│   │   ├── auth.py                # Login, registro, JWT y middleware de autenticación
+│   │   ├── database.py            # Conexión a PostgreSQL (psycopg3)
+│   │   └── reportes.py            # Generación de reportes PDF (FPDF2)
+│   ├── requirements.txt           # Dependencias de Python
+│   └── .env.example               # Plantilla de variables de entorno del backend
+├── sql/
+│   ├── ddl/
+│   │   ├── 01_schema.sql                     # Definición de tablas, PK, FK, CHECK e índices
+│   │   ├── 02_auditoria_triggers.sql         # Función y triggers de auditoría automática
+│   │   ├── 03_procedures_functions.sql       # Procedimientos y funciones almacenadas
+│   │   └── 04_migrar_usuarios.sql            # Migración para esquemas antiguos de usuarios
+│   ├── dml/
+│   │   └── 01_seed.sql                       # Datos iniciales de prueba
+│   ├── queries/
+│   │   └── 01_consultas_demostracion.sql     # Consultas de demostración del modelo
+│   └── README.md                             # Orden de ejecución de los scripts SQL
+├── docs/                           # Documentación del proyecto (manuales, fichas, análisis)
+├── src/
+│   ├── components/
+│   │   ├── Layout.jsx              # Estructura general con menú lateral
+│   │   └── ProtectedRoute.jsx      # Protección de rutas autenticadas
+│   ├── pages/
+│   │   ├── Login.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Productos.jsx
+│   │   ├── Categorias.jsx
+│   │   ├── Proveedores.jsx
+│   │   ├── Ventas.jsx
+│   │   ├── Clientes.jsx
+│   │   ├── Inventario.jsx
+│   │   └── Auditoria.jsx
+│   ├── services/
+│   │   ├── api.js                  # Cliente Axios + interceptores (token, errores)
+│   │   └── authService.js          # Login, registro y manejo de sesión
+│   ├── assets/
+│   ├── App.jsx                     # Enrutamiento principal y contexto de notificaciones
+│   ├── App.css
+│   ├── index.css
+│   └── main.jsx
+├── public/
+├── index.html
+├── package.json
+├── vite.config.js                  # Configuración de Vite + proxy hacia el backend
+├── vercel.json                     # Configuración de despliegue en Vercel
 ```
 
 ---
@@ -169,21 +167,20 @@ Crear la base de datos:
 create database invesys;
 ```
 
-Ejecutar los scripts en el orden indicado en [`bdd/sql/README.md`](bdd/sql/README.md):
+Ejecutar los scripts en el orden indicado en [`sql/README.md`](sql/README.md):
 
 ```powershell
-psql -d invesys -f bdd/sql/ddl/01_schema.sql
-psql -d invesys -f bdd/sql/ddl/02_auditoria_triggers.sql
-psql -d invesys -f bdd/sql/ddl/03_procedures_functions.sql
-psql -d invesys -f bdd/sql/dml/01_seed.sql
+psql -d invesys -f sql/ddl/01_schema.sql
+psql -d invesys -f sql/ddl/02_auditoria_triggers.sql
+psql -d invesys -f sql/ddl/03_procedures_functions.sql
+psql -d invesys -f sql/dml/01_seed.sql
 ```
 
-> Si la base de datos ya existía con un esquema previo de `usuarios`, ejecutar primero `bdd/sql/ddl/04_migrar_usuarios.sql`.
+> Si la base de datos ya existía con un esquema previo de `usuarios`, ejecutar primero `sql/ddl/04_migrar_usuarios.sql`.
 
 ### 2. Backend (FastAPI)
 
 ```powershell
-cd bdd
 copy backend\.env.example backend\.env
 cd backend
 python -m venv .venv
@@ -201,7 +198,6 @@ contraseña:  Admin123!
 ### 3. Frontend (React + Vite)
 
 ```powershell
-cd bdd
 npm install
 npm run dev
 ```
@@ -235,7 +231,7 @@ El frontend se conecta al backend mediante el proxy configurado en `vite.config.
 
 ## Variables de entorno
 
-El archivo `bdd/backend/.env.example` contiene la plantilla de configuración. Copiarlo como `.env` y ajustar según el entorno:
+El archivo `backend/.env.example` contiene la plantilla de configuración. Copiarlo como `.env` y ajustar según el entorno:
 
 | Variable | Descripción | Valor por defecto |
 |---|---|---|
@@ -260,13 +256,13 @@ El archivo `bdd/backend/.env.example` contiene la plantilla de configuración. C
 
 ## Modelo de datos
 
-El esquema cuenta con **11 tablas** relacionadas, normalizadas hasta la 4FN, incluyendo una relación muchos a muchos (`producto_proveedor`), auditoría automática mediante triggers, **3 procedimientos almacenados**, **3 funciones personalizadas** y un conjunto de consultas de demostración. El detalle completo del modelo entidad-relación, el diccionario de datos y el proceso de normalización se encuentra documentado en la carpeta [`bdd/docs/`](bdd/docs/).
+El esquema cuenta con **11 tablas** relacionadas, normalizadas hasta la 4FN, incluyendo una relación muchos a muchos (`producto_proveedor`), auditoría automática mediante triggers, **3 procedimientos almacenados**, **3 funciones personalizadas** y un conjunto de consultas de demostración. El detalle completo del modelo entidad-relación, el diccionario de datos y el proceso de normalización se encuentra documentado en la carpeta [`docs/`](docs/).
 
 ---
 
 ## Documentación adicional
 
-La carpeta [`bdd/docs/`](bdd/docs/) contiene la documentación funcional y técnica del proyecto:
+La carpeta [`docs/`](docs/) contiene la documentación funcional y técnica del proyecto:
 
 - Manual de Usuario
 - Ficha Técnica del Equipo
