@@ -13,8 +13,9 @@ import Auditoria from './pages/Auditoria.jsx'
 import Sucursales from './pages/Sucursales.jsx'
 import Descuentos from './pages/Descuentos.jsx'
 import Configuracion from './pages/Configuracion.jsx'
+import Setup from './pages/Setup.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
-import { hayToken } from './services/api.js'
+import { hayToken, getApiUrl } from './services/api.js'
 
 export const ToastCtx = createContext(null)
 
@@ -50,9 +51,18 @@ function ToastProvider({ children }) {
   )
 }
 
+function necesitaSetup() {
+  const url = getApiUrl()
+  return !url || url === '/api'
+}
+
 function PublicRoute({ children }) {
   if (hayToken()) {
     return <Navigate to="/dashboard" replace />
+  }
+
+  if (necesitaSetup() && window.location.pathname !== '/setup') {
+    return <Navigate to="/setup" replace />
   }
 
   return children
@@ -91,6 +101,7 @@ export default function App() {
   return (
     <ToastProvider>
       <Routes>
+        <Route path="/setup" element={<Setup />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />

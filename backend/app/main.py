@@ -1,9 +1,14 @@
+import io
 import os
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -13,8 +18,16 @@ from .auth import router as auth_router, get_current_user, seed_admin
 from .database import get_conn
 from .reportes import generar_pdf
 
+load_dotenv()
+
 app = FastAPI(title='InveSys API', version='2.0.0')
 
+# ─── Cloudinary ──────────────────────────────────────────────
+CLOUDINARY_URL = os.getenv('CLOUDINARY_URL', '')
+if CLOUDINARY_URL:
+    cloudinary.config(secure=True)
+
+# Mantener compatibilidad con avatares legacy locales
 UPLOADS_DIR = Path(__file__).resolve().parent.parent / 'uploads'
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 AVATARS_DIR = UPLOADS_DIR / 'avatars'
@@ -761,13 +774,25 @@ def cambiar_sucursal_por_admin(usuario_id: int, sucursal_id: int, usuario: dict 
 
 @app.post('/auth/me/avatar', status_code=200)
 def subir_avatar(file: UploadFile, usuario: dict = Depends(get_current_user)):
-  ext = Path(file.filename).suffix if file.filename else '.jpg'
-  filename = f'avatar_{usuario["id"]}_{int(datetime.utcnow().timestamp())}{ext}'
-  path = AVATARS_DIR / filename
   content = file.file.read()
-  with open(path, 'wb') as f:
-    f.write(content)
-  avatar_url = f'/uploads/avatars/{filename}'
+
+  if CLOUDINARY_URL:
+    result = cloudinary.uploader.upload(
+      content,
+      folder=f'invesys/avatars/{usuario["id"]}',
+      public_id=f'avatar_{int(datetime.utcnow().timestamp())}',
+      overwrite=True,
+      resource_type='image',
+    )
+    avatar_url = result['secure_url']
+  else:
+    ext = Path(file.filename).suffix if file.filename else '.jpg'
+    filename = f'avatar_{usuario["id"]}_{int(datetime.utcnow().timestamp())}{ext}'
+    path = AVATARS_DIR / filename
+    with open(path, 'wb') as f:
+      f.write(content)
+    avatar_url = f'/uploads/avatars/{filename}'
+
   with get_conn() as conn:
     with conn.cursor() as cur:
       cur.execute('UPDATE usuarios SET avatar_url=%s WHERE id=%s', (avatar_url, usuario['id']))

@@ -1,11 +1,23 @@
 import axios from 'axios'
 
+export function getApiUrl() {
+  return localStorage.getItem('invesys_api_url') || import.meta.env.VITE_API_URL || '/api'
+}
+
+export function setApiUrl(url) {
+  const cleanUrl = url.replace(/\/+$/, '')
+  localStorage.setItem('invesys_api_url', cleanUrl)
+  api.defaults.baseURL = cleanUrl
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getApiUrl(),
   timeout: 30000,
 })
 
 api.interceptors.request.use((config) => {
+  config.baseURL = getApiUrl()
+
   const token = sessionStorage.getItem('token')
 
   if (token) {

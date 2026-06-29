@@ -7,3 +7,9 @@ __pycache__/
 venv/
 backend/venv/
 .vercel
+backend/uploads/
+src-tauri/target/
+*.msi
+*.zip
+cloudinary_preset.txt
+src-tauri/.signing.key

@@ -19,7 +19,7 @@ import {
   registrarUsuario,
   verificarCodigoAdmin,
 } from '../services/authService.js'
-import { apiError } from '../services/api.js'
+import { apiError, getApiUrl, setApiUrl } from '../services/api.js'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -501,6 +501,16 @@ export default function Login() {
               onClick={() => cambiarModo(esRegistro ? 'login' : 'registro')}
             >
               {esRegistro ? 'Inicia sesión' : 'Crear cuenta nueva'}
+            </button>
+          </p>
+
+          <p className="auth-switch" style={{ fontSize: '.75rem', marginTop: 6 }}>
+            <button
+              type="button"
+              onClick={() => navigate('/setup')}
+              style={{ fontSize: '.75rem' }}
+            >
+              Cambiar servidor
             </button>
           </p>
         </form>
