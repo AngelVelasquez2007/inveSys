@@ -1,10 +1,10 @@
 {
   "version": "1.0.0",
-  "notes": "Primera versión del app de escritorio InveSys. Incluye sistema de inventario multi-sucursal, ventas, reportes PDF, y más.",
-  "pub_date": "2026-06-29T22:30:00Z",
+  "notes": "Agregado: escaneo de codigo de barras por camara y escaner USB, campo codigo_barras en productos.",
+  "pub_date": "2026-06-29T23:00:00Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUM1ZNc0JuSTA4Q0tMOEdCUUMzaDJVWTFnNkQyenZEdVlnditHbys2QVhnQkRFb3NqcHFrTnpRZS8zb1IzdjlJYXpudHB2d2RMM2dVRlRmWlV5U3phL2hJaTAxU3ozQ0FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyNzcyMTc3CWZpbGU6SW52ZVN5c18xLjAuMF94NjRfZXMtRVMubXNpCkNmMzVsNURrTDdDbzlFNkoxb3d1a2J4Wm9NRWFSY3duKzc1MkRCWXl6b0dUYmdkb0JJZVNDMzZTUkNOT2tYN3MwNHdtNW80SHhaem96TkZiNm5oT0NRPT0K",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUM1ZNc0JuSTA4Q0pJRVJRQWJvcEV2YXk2L3pWUXljYmxYTk5GNjlzeitiZkFMRlg4V0pDUUk3dk1kb2E3QUhUUitHV0ljZGRFUXZZbUIwWWMrN1orV29ndVo3QmZKZEE0PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzgyNzczMTg1CWZpbGU6SW52ZVN5c18xLjAuMF94NjRfZXMtRVMubXNpCm5heEVyZDhuYldsYURodmNCZHZGUENYczlMQ0F1NmFESk5paFVBRE9vcVJlSmpzaDhDaGxQNm5VTmV4TlZEdjFiTGVIMHpWbmtVQVQrQ1E3UTNsRkJnPT0K",
       "url": "https://github.com/AngelVelasquez2007/inveSys/releases/download/v1.0.0/InveSys_1.0.0_x64_es-ES.msi"
     }
   }
