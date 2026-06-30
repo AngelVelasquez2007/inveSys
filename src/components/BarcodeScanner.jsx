@@ -1,62 +1,67 @@
 import { useEffect, useRef, useState } from 'react'
-import { Camera, CameraOff, X } from 'lucide-react'
+import { Camera, CameraOff, Scan, X } from 'lucide-react'
 
 export default function BarcodeScanner({ onScan, onClose }) {
-  const previewRef = useRef(null)
-  const scannerRef = useRef(null)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
   const [error, setError] = useState('')
   const [iniciado, setIniciado] = useState(false)
   const [escaneando, setEscaneando] = useState(false)
+  const [detectorDisponible, setDetectorDisponible] = useState(false)
 
   useEffect(() => {
     let mounted = true
+    let animFrame
 
     async function iniciar() {
       try {
-        const { Html5Qrcode } = await import('html5-qrcode')
-        if (!mounted) return
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } },
+        })
+        if (!mounted) { stream.getTracks().forEach(t => t.stop()); return }
 
-        const scanner = new Html5Qrcode('scanner-preview')
-        scannerRef.current = scanner
-
-        await scanner.start(
-          { facingMode: 'environment' },
-          {
-            fps: 10,
-            qrbox: { width: 300, height: 150 },
-            formatsToSupport: [
-              0,  // AZTEC
-              1,  // CODABAR
-              2,  // CODE_39
-              3,  // CODE_93
-              4,  // CODE_128
-              5,  // DATA_MATRIX
-              6,  // EAN_8
-              7,  // EAN_13
-              8,  // ITF
-              9,  // MAXICODE
-              10, // PDF_417
-              11, // QR_CODE
-              12, // RSS_14
-              13, // RSS_EXPANDED
-              14, // UPC_A
-              15, // UPC_E
-              16, // UPC_EAN_EXTENSION
-            ],
-          },
-          (decodedText) => {
-            if (escaneando) return
-            setEscaneando(true)
-            scanner.pause()
-            onScan?.(decodedText)
-          },
-          () => {},
-        )
-
+        streamRef.current = stream
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+        }
         setIniciado(true)
+
+        const tieneDetector = 'BarcodeDetector' in window
+        setDetectorDisponible(tieneDetector)
+
+        if (tieneDetector) {
+          const detector = new BarcodeDetector({
+            formats: ['ean_13', 'ean_8', 'upc_a', 'code_128', 'code_39', 'itf', 'qr_code'],
+          })
+          const video = videoRef.current
+
+          async function detectar() {
+            if (!mounted || escaneando) return
+            try {
+              const barcodes = await detector.detect(video)
+              for (const barcode of barcodes) {
+                if (barcode.rawValue && barcode.rawValue.length >= 4) {
+                  setEscaneando(true)
+                  stream.getTracks().forEach(t => t.stop())
+                  onScan?.(barcode.rawValue)
+                  return
+                }
+              }
+            } catch {}
+            if (mounted) animFrame = requestAnimationFrame(detectar)
+          }
+          animFrame = requestAnimationFrame(detectar)
+        }
       } catch (err) {
-        if (mounted) {
-          setError(err?.message || 'No se pudo acceder a la cámara. Verifica los permisos.')
+        if (!mounted) return
+        if (err.name === 'NotAllowedError') {
+          setError('Permiso de cámara denegado. Ve a Configuración → Privacidad → Cámara.')
+        } else if (err.name === 'NotFoundError') {
+          setError('No se encontró ninguna cámara en este dispositivo.')
+        } else if (err.name === 'NotReadableError') {
+          setError('La cámara está siendo usada por otra aplicación.')
+        } else {
+          setError(`Error: ${err.message || err}`)
         }
       }
     }
@@ -65,12 +70,53 @@ export default function BarcodeScanner({ onScan, onClose }) {
 
     return () => {
       mounted = false
-      if (scannerRef.current) {
-        try { scannerRef.current.stop() } catch {}
-        try { scannerRef.current.clear() } catch {}
+      if (animFrame) cancelAnimationFrame(animFrame)
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop())
       }
     }
   }, [])
+
+  async function capturarManual() {
+    const video = videoRef.current
+    const stream = streamRef.current
+    if (!video || !stream || escaneando) return
+
+    setEscaneando(true)
+    try {
+      const canvas = document.createElement('canvas')
+      canvas.width = video.videoWidth
+      canvas.height = video.videoHeight
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(video, 0, 0)
+
+      if ('BarcodeDetector' in window) {
+        const detector = new BarcodeDetector({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'code_128', 'code_39', 'itf', 'qr_code'],
+        })
+        const barcodes = await detector.detect(canvas)
+        for (const barcode of barcodes) {
+          if (barcode.rawValue && barcode.rawValue.length >= 4) {
+            stream.getTracks().forEach(t => t.stop())
+            onScan?.(barcode.rawValue)
+            return
+          }
+        }
+      }
+
+      // Si no detectó, preguntar si quiere escribir manual
+      const codigo = prompt('Código no detectado. Escribe el código de barras manualmente:')
+      if (codigo && codigo.length >= 4) {
+        stream.getTracks().forEach(t => t.stop())
+        onScan?.(codigo.trim())
+        return
+      }
+      setEscaneando(false)
+    } catch {
+      setEscaneando(false)
+      setError('Error al procesar la imagen.')
+    }
+  }
 
   return (
     <div className="modal-overlay">
@@ -92,24 +138,46 @@ export default function BarcodeScanner({ onScan, onClose }) {
             <div style={{ padding: '2rem', color: 'var(--muted)' }}>
               <CameraOff size={48} style={{ marginBottom: 12, opacity: 0.5 }} />
               <p style={{ color: '#dc2626' }}>{error}</p>
-              <p style={{ fontSize: '.85rem', marginTop: 8 }}>
-                Asegúrate de tener una cámara conectada y permisos concedidos.
-              </p>
             </div>
           )}
-          <div
-            id="scanner-preview"
-            ref={previewRef}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
             style={{
               width: '100%',
               maxWidth: 400,
               margin: '0 auto',
               display: iniciado ? 'block' : 'none',
+              borderRadius: 8,
             }}
           />
+          {iniciado && !escaneando && (
+            <>
+              <p style={{ color: 'var(--muted)', fontSize: '.85rem', marginTop: 8 }}>
+                {detectorDisponible
+                  ? 'Enfoca un código de barras EAN-13'
+                  : 'Escáner automático no disponible'}
+              </p>
+              {!detectorDisponible && (
+                <p style={{ fontSize: '.85rem', marginTop: 4, color: '#ea580c' }}>
+                  Usa un escáner USB o escribe el código manualmente.
+                </p>
+              )}
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={capturarManual}
+                style={{ marginTop: 12 }}
+              >
+                <Scan size={16} style={{ marginRight: 6 }} />
+                Capturar y detectar
+              </button>
+            </>
+          )}
           {escaneando && (
             <p style={{ color: 'var(--primary)', fontWeight: 600, marginTop: 8 }}>
-              Código escaneado. Puedes cerrar esta ventana.
+              Código escaneado
             </p>
           )}
         </div>
