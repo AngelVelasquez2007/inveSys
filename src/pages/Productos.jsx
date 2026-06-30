@@ -96,10 +96,18 @@ export default function Productos() {
     setForm(current => ({ ...current, [field]: value }))
   }
 
+  function generarSku() {
+    const cat = categorias.find(c => c.id === Number(form.categoria_id))
+    const prefijo = cat ? cat.nombre.slice(0, 3).toUpperCase() : 'PRD'
+    const num = String(Date.now()).slice(-6)
+    return `${prefijo}-${num}`
+  }
+
   async function save(event) {
     event.preventDefault()
     const payload = {
       ...form,
+      sku: form.sku.trim() || generarSku(),
       categoria_id: Number(form.categoria_id),
       proveedor_id: form.proveedor_id ? Number(form.proveedor_id) : null,
       precio: Number(form.precio),
