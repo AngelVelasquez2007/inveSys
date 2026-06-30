@@ -11,7 +11,7 @@ from cloudinary.utils import cloudinary_url
 from dotenv import load_dotenv
 from fastapi import FastAPI, Depends, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -1043,9 +1043,9 @@ app.mount('/assets', StaticFiles(directory=str(STATIC_DIR / 'assets')), name='as
 @app.get('/descargar')
 def descargar_msi():
   msi = MSI_DIR / 'InveSys_1.0.0_x64_es-ES.msi'
-  if not msi.exists():
-    raise HTTPException(status_code=404, detail='MSI no encontrado')
-  return FileResponse(str(msi), media_type='application/x-msi', filename='InveSys_1.0.0_x64_es-ES.msi')
+  if msi.exists():
+    return FileResponse(str(msi), media_type='application/x-msi', filename='InveSys_1.0.0_x64_es-ES.msi')
+  return RedirectResponse('https://github.com/AngelVelasquez2007/inveSys/releases/latest/download/InveSys_1.0.0_x64_es-ES.msi')
 
 
 @app.get('/{full_path:path}', response_class=HTMLResponse)
