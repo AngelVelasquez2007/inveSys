@@ -200,6 +200,7 @@ export default function Dashboard() {
                       <span className={`badge ${
                         o.estado === 'PAGADA' ? 'badge-green' :
                         o.estado === 'ANULADA' ? 'badge-gray' :
+                        o.estado === 'DEVUELTA' ? 'badge-orange' :
                         'badge-yellow'
                       }`}>{o.estado}</span>
                     </td>

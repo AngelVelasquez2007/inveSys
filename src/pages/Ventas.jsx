@@ -7,9 +7,11 @@ import {
   DollarSign,
   Minus,
   Plus,
+  RotateCcw,
   Search,
   ShoppingCart,
   Trash2,
+  Undo2,
   X,
   XCircle,
 } from 'lucide-react'
@@ -51,6 +53,7 @@ function OperadorPos({ toast }) {
   const [detalleId, setDetalleId] = useState(null)
   const [detalles, setDetalles] = useState({})
   const [descuentoId, setDescuentoId] = useState(null)
+  const [devolviendo, setDevolviendo] = useState(null) // { id, segundos }
 
   function load() {
     Promise.all([
@@ -69,6 +72,16 @@ function OperadorPos({ toast }) {
       .catch(err => setError(apiError(err)))
   }
 
+  // Timer para deshacer devolución (10s)
+  useEffect(() => {
+    if (!devolviendo) return
+    if (devolviendo.segundos <= 0) { setDevolviendo(null); return }
+    const t = setTimeout(() => {
+      setDevolviendo(prev => prev ? { ...prev, segundos: prev.segundos - 1 } : null)
+    }, 1000)
+    return () => clearTimeout(t)
+  }, [devolviendo])
+
   useEffect(load, [])
 
   const filtrados = ordenes.filter(o =>
@@ -76,8 +89,6 @@ function OperadorPos({ toast }) {
   )
 
   const resumen = {
-    hoy: ordenes.filter(o => o.fecha?.startsWith(today())).length,
-    mes: ordenes.filter(o => o.fecha?.startsWith(today().slice(0, 7))).length,
     pendientes: ordenes.filter(o => o.estado === 'PENDIENTE').length,
   }
 
@@ -226,6 +237,32 @@ function OperadorPos({ toast }) {
       toast(apiError(err), 'error')
     } finally {
       setProcessing(current => ({ ...current, [`${ordenId}-${nuevoEstado}`]: false }))
+    }
+  }
+
+  async function devolver(ordenId) {
+    if (!confirm('¿Devolver esta orden? Los productos volverán al inventario.')) return
+    setProcessing(current => ({ ...current, [`${ordenId}-DEVOLVER`]: true }))
+    try {
+      await api.post(`/ordenes/${ordenId}/devolver`)
+      toast('Devolución realizada')
+      setDevolviendo({ id: ordenId, segundos: 10 })
+      load()
+    } catch (err) {
+      toast(apiError(err), 'error')
+    } finally {
+      setProcessing(current => ({ ...current, [`${ordenId}-DEVOLVER`]: false }))
+    }
+  }
+
+  async function cancelarDevolucion(ordenId) {
+    try {
+      await api.post(`/ordenes/${ordenId}/cancelar-devolucion`)
+      toast('Devolución cancelada')
+      setDevolviendo(null)
+      load()
+    } catch (err) {
+      toast(apiError(err), 'error')
     }
   }
 
@@ -557,6 +594,7 @@ function OperadorPos({ toast }) {
                     <span className={`badge ${
                       o.estado === 'PAGADA' ? 'badge-green' :
                       o.estado === 'ANULADA' ? 'badge-gray' :
+                      o.estado === 'DEVUELTA' ? 'badge-orange' :
                       'badge-yellow'
                     }`}>{o.estado}</span>
                   </td>
@@ -578,7 +616,15 @@ function OperadorPos({ toast }) {
                         </button>
                       </>
                     )}
-                    {o.estado !== 'PENDIENTE' && (
+                    {o.estado === 'PAGADA' && (
+                      <button className="btn btn-warning" style={btnEstilo} onClick={() => devolver(o.id)} disabled={processing[`${o.id}-DEVOLVER`]}>
+                        <RotateCcw size={12} /> Devolver
+                      </button>
+                    )}
+                    {o.estado === 'DEVUELTA' && (
+                      <span className="badge badge-orange">DEVUELTA</span>
+                    )}
+                    {!['PENDIENTE', 'PAGADA', 'DEVUELTA'].includes(o.estado) && (
                       <span className="text-muted" style={{ fontSize: '.75rem' }}>—</span>
                     )}
                   </td>
@@ -622,6 +668,27 @@ function OperadorPos({ toast }) {
             </div>
           </div>
         </section>
+      )}
+
+      {devolviendo && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#ea580c', color: '#fff', padding: '12px 20px',
+          borderRadius: 10, display: 'flex', alignItems: 'center', gap: 12,
+          zIndex: 9999, boxShadow: '0 4px 20px rgba(0,0,0,.25)',
+          fontSize: '.9rem', fontWeight: 500,
+        }}>
+          <RotateCcw size={18} />
+          <span>Devolución ORD-{String(devolviendo.id).padStart(4, '0')} — Deshacer en {devolviendo.segundos}s</span>
+          <button
+            className="btn"
+            style={{ background: '#fff', color: '#ea580c', border: 'none', padding: '6px 14px', borderRadius: 6, fontWeight: 600, cursor: 'pointer' }}
+            onClick={() => cancelarDevolucion(devolviendo.id)}
+          >
+            <Undo2 size={14} style={{ marginRight: 4 }} />
+            Deshacer
+          </button>
+        </div>
       )}
     </>
   )
@@ -739,6 +806,7 @@ function AdminVentas({ toast }) {
                     <span className={`badge ${
                       o.estado === 'PAGADA' ? 'badge-green' :
                       o.estado === 'ANULADA' ? 'badge-gray' :
+                      o.estado === 'DEVUELTA' ? 'badge-orange' :
                       'badge-yellow'
                     }`}>{o.estado}</span>
                   </td>

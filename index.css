@@ -299,6 +299,7 @@ tbody tr:last-child td { border-bottom: none; }
 .badge-yellow    { background: var(--warning-lt); color: var(--warning); }
 .badge-blue      { background: var(--primary-lt); color: var(--primary); }
 .badge-gray      { background: #f1f5f9; color: var(--muted); }
+.badge-orange    { background: #ffedd5; color: #ea580c; }
 
 /* ─── Buttons ────────────────────────────────── */
 .btn            { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 7px; font-size: .875rem; font-weight: 500; border: none; transition: all .2s; }

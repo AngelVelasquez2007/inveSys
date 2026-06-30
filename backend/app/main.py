@@ -688,6 +688,52 @@ def actualizar_estado_orden(orden_id: int, payload: OrdenEstadoUpdate, _usuario:
   )
 
 
+@app.post('/ordenes/{orden_id}/devolver')
+def devolver_orden(orden_id: int, usuario: dict = Depends(get_current_user)):
+  with get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute('select * from ordenes_venta where id=%s', (orden_id,))
+      orden = cur.fetchone()
+      if not orden:
+        raise HTTPException(status_code=404, detail='Orden no encontrada')
+      if orden['estado'] not in ('PAGADA',):
+        raise HTTPException(status_code=400, detail='Solo se pueden devolver órdenes pagadas')
+
+      cur.execute("update ordenes_venta set estado='DEVUELTA' where id=%s", (orden_id,))
+      cur.execute('select producto_id, cantidad from orden_items where orden_id=%s', (orden_id,))
+      for item in cur.fetchall():
+        cur.execute(
+          'call sp_actualizar_stock_producto(%s::bigint, %s::integer, %s, %s)',
+          (item['producto_id'], item['cantidad'], f'Devolución orden #{orden_id}', 'ENTRADA'),
+        )
+      conn.commit()
+      cur.execute('select * from ordenes_venta where id=%s', (orden_id,))
+      return cur.fetchone()
+
+
+@app.post('/ordenes/{orden_id}/cancelar-devolucion')
+def cancelar_devolucion(orden_id: int, _usuario: dict = Depends(get_current_user)):
+  with get_conn() as conn:
+    with conn.cursor() as cur:
+      cur.execute('select * from ordenes_venta where id=%s', (orden_id,))
+      orden = cur.fetchone()
+      if not orden:
+        raise HTTPException(status_code=404, detail='Orden no encontrada')
+      if orden['estado'] != 'DEVUELTA':
+        raise HTTPException(status_code=400, detail='La orden no está devuelta')
+
+      cur.execute("update ordenes_venta set estado='PAGADA' where id=%s", (orden_id,))
+      cur.execute('select producto_id, cantidad from orden_items where orden_id=%s', (orden_id,))
+      for item in cur.fetchall():
+        cur.execute(
+          'call sp_actualizar_stock_producto(%s::bigint, %s::integer, %s, %s)',
+          (item['producto_id'], -item['cantidad'], f'Cancelación devolución orden #{orden_id}', 'SALIDA'),
+        )
+      conn.commit()
+      cur.execute('select * from ordenes_venta where id=%s', (orden_id,))
+      return cur.fetchone()
+
+
 # ─── Reportes ───────────────────────────────────────────────
 
 @app.get('/reportes/ventas')
