@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+const DEFAULT_API_URL = 'https://proyecto-final-bdd-i.onrender.com'
+
 export function getApiUrl() {
-  return localStorage.getItem('invesys_api_url') || import.meta.env.VITE_API_URL || '/api'
+  return localStorage.getItem('invesys_api_url') || import.meta.env.VITE_API_URL || DEFAULT_API_URL
 }
 
 export function setApiUrl(url) {
@@ -44,15 +46,11 @@ api.interceptors.response.use(
 )
 
 export function apiError(error) {
-  if (error?.code === 'ECONNABORTED') {
-    return 'El servidor no respondió a tiempo. Verifica que FastAPI esté corriendo en el puerto 8000.'
-  }
-
   return (
     error?.response?.data?.detail ||
     error?.response?.data?.message ||
     error?.message ||
-    'No se pudo completar la solicitud'
+    'Error de conexión. Verifica que el servidor esté activo.'
   )
 }
 
