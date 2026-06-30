@@ -99,7 +99,7 @@ export default function Productos() {
   function generarSku() {
     const cat = categorias.find(c => c.id === Number(form.categoria_id))
     const prefijo = cat ? cat.nombre.slice(0, 3).toUpperCase() : 'PRD'
-    const num = String(Date.now()).slice(-6)
+    const num = String(Date.now()).slice(-3)
     return `${prefijo}-${num}`
   }
 

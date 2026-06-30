@@ -9,8 +9,9 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, UploadFile
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr, Field
 
@@ -1029,3 +1030,27 @@ def eliminar_descuento(descuento_id: int, usuario: dict = Depends(get_current_us
   if usuario['rol'] != 'ADMIN':
     raise HTTPException(status_code=403, detail='Solo administradores')
   return fetch_one('DELETE FROM descuentos WHERE id=%s RETURNING id', (descuento_id,))
+
+
+# ─── Web frontend + descargas ─────────────────────────────
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / 'static'
+MSI_DIR = Path(__file__).resolve().parent.parent.parent / 'src-tauri/target/release/bundle/msi'
+
+app.mount('/assets', StaticFiles(directory=str(STATIC_DIR / 'assets')), name='assets')
+
+
+@app.get('/descargar')
+def descargar_msi():
+  msi = MSI_DIR / 'InveSys_1.0.0_x64_es-ES.msi'
+  if not msi.exists():
+    raise HTTPException(status_code=404, detail='MSI no encontrado')
+  return FileResponse(str(msi), media_type='application/x-msi', filename='InveSys_1.0.0_x64_es-ES.msi')
+
+
+@app.get('/{full_path:path}', response_class=HTMLResponse)
+def spa(full_path: str):
+  index = STATIC_DIR / 'index.html'
+  if not index.exists():
+    return HTMLResponse('<h1>Frontend no construido</h1><p>Ejecuta <code>npm run build</code> y copia <code>dist/</code> a <code>backend/static/</code></p>')
+  return HTMLResponse(index.read_text(encoding='utf-8'))
