@@ -7,6 +7,7 @@ import {
   DollarSign,
   Minus,
   Plus,
+  Printer,
   RotateCcw,
   Search,
   ShoppingCart,
@@ -18,6 +19,7 @@ import {
 import { useToast } from '../App.jsx'
 import { api, apiError } from '../services/api.js'
 import { useBarcodeScanner } from '../hooks/useBarcodeScanner.js'
+import { imprimirRecibo } from '../utils/recibo.js'
 
 function today() { return new Date().toISOString().split('T')[0] }
 
@@ -30,12 +32,12 @@ export default function Ventas() {
   const usuario = getUsuario()
   const esAdmin = usuario?.rol === 'ADMIN'
 
-  return esAdmin ? <AdminVentas toast={toast} /> : <OperadorPos toast={toast} />
+  return esAdmin ? <AdminVentas toast={toast} usuario={usuario} /> : <OperadorPos toast={toast} usuario={usuario} />
 }
 
 /* ─────────────── OPERADOR — POS ─────────────── */
 
-function OperadorPos({ toast }) {
+function OperadorPos({ toast, usuario }) {
   const searchRef = useRef(null)
   const [ordenes, setOrdenes] = useState([])
   const [clientes, setClientes] = useState([])
@@ -89,6 +91,8 @@ function OperadorPos({ toast }) {
   )
 
   const resumen = {
+    hoy: ordenes.filter(o => o.fecha?.startsWith(today())).length,
+    mes: ordenes.filter(o => o.fecha?.startsWith(today().slice(0, 7))).length,
     pendientes: ordenes.filter(o => o.estado === 'PENDIENTE').length,
   }
 
@@ -173,6 +177,7 @@ function OperadorPos({ toast }) {
 
   function handleSearchKeyDown(e) {
     if (e.key === 'Enter' && productosBusqueda.length > 0) {
+      e.nativeEvent.stopImmediatePropagation()
       agregarAlCarrito(productosBusqueda[0])
     }
   }
@@ -201,6 +206,20 @@ function OperadorPos({ toast }) {
         descuento_aplicado: descuentoCalc > 0 ? descuentoCalc : null,
       })
       toast(`Venta registrada — Cambio: ${Number(data.cambio).toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}`)
+      const clienteNombre = clienteId ? (clientes.find(c => c.id === Number(clienteId))?.nombre || 'Mostrador') : 'Mostrador'
+      imprimirRecibo({
+        empresa: usuario?.empresa_nombre || 'InveSys',
+        ordenId: data.id,
+        fecha: data.fecha || new Date().toISOString(),
+        cajero: usuario?.nombre || 'N/A',
+        cliente: clienteNombre,
+        items: cartItems,
+        subtotal,
+        descuento: descuentoCalc,
+        total,
+        efectivo: Number(dineroRecibido),
+        cambio: Number(data.cambio) || 0,
+      })
       setMostrandoPos(false)
       setCartItems([])
       setDineroRecibido('')
@@ -252,6 +271,39 @@ function OperadorPos({ toast }) {
       toast(apiError(err), 'error')
     } finally {
       setProcessing(current => ({ ...current, [`${ordenId}-DEVOLVER`]: false }))
+    }
+  }
+
+  async function reimprimir(ordenId) {
+    try {
+      const res = await api.get(`/ordenes/${ordenId}`)
+      const o = res.data
+      const items = (o.items || []).map(i => ({
+        cantidad: i.cantidad,
+        nombre: i.producto,
+        precio: Number(i.precio_unitario),
+        subtotal: Number(i.cantidad) * Number(i.precio_unitario),
+      }))
+      const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
+      const descuento = Number(o.descuento_aplicado || 0)
+      const total = Number(o.total || 0)
+      const efectivo = Number(o.dinero_recibido || 0)
+      const cambio = Number(o.cambio || 0)
+      imprimirRecibo({
+        empresa: usuario?.empresa_nombre || 'InveSys',
+        ordenId: o.id,
+        fecha: o.fecha,
+        cajero: o.usuario || 'N/A',
+        cliente: o.cliente || 'Mostrador',
+        items,
+        subtotal,
+        descuento,
+        total,
+        efectivo,
+        cambio,
+      })
+    } catch {
+      toast('Error al cargar datos del recibo', 'error')
     }
   }
 
@@ -617,9 +669,14 @@ function OperadorPos({ toast }) {
                       </>
                     )}
                     {o.estado === 'PAGADA' && (
-                      <button className="btn btn-warning" style={btnEstilo} onClick={() => devolver(o.id)} disabled={processing[`${o.id}-DEVOLVER`]}>
-                        <RotateCcw size={12} /> Devolver
-                      </button>
+                      <>
+                        <button className="btn btn-warning" style={btnEstilo} onClick={() => devolver(o.id)} disabled={processing[`${o.id}-DEVOLVER`]}>
+                          <RotateCcw size={12} /> Devolver
+                        </button>{' '}
+                        <button className="btn btn-secondary" style={btnEstilo} onClick={() => reimprimir(o.id)}>
+                          <Printer size={12} /> Recibo
+                        </button>
+                      </>
                     )}
                     {o.estado === 'DEVUELTA' && (
                       <span className="badge badge-orange">DEVUELTA</span>
@@ -696,7 +753,7 @@ function OperadorPos({ toast }) {
 
 /* ─────────────── ADMIN — Reporte ────────────── */
 
-function AdminVentas({ toast }) {
+function AdminVentas({ toast, usuario }) {
   const [ordenes, setOrdenes] = useState([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -721,6 +778,41 @@ function AdminVentas({ toast }) {
     totales: ordenes.reduce((s, o) => s + Number(o.total || 0), 0),
     totalesMes: ordenes.filter(o => o.fecha?.startsWith(today().slice(0, 7))).reduce((s, o) => s + Number(o.total || 0), 0),
   }
+
+  async function reimprimir(ordenId) {
+    try {
+      const res = await api.get(`/ordenes/${ordenId}`)
+      const o = res.data
+      const items = (o.items || []).map(i => ({
+        cantidad: i.cantidad,
+        nombre: i.producto,
+        precio: Number(i.precio_unitario),
+        subtotal: Number(i.cantidad) * Number(i.precio_unitario),
+      }))
+      const subtotal = items.reduce((s, i) => s + i.subtotal, 0)
+      const descuento = Number(o.descuento_aplicado || 0)
+      const total = Number(o.total || 0)
+      const efectivo = Number(o.dinero_recibido || 0)
+      const cambio = Number(o.cambio || 0)
+      imprimirRecibo({
+        empresa: usuario?.empresa_nombre || 'InveSys',
+        ordenId: o.id,
+        fecha: o.fecha,
+        cajero: o.usuario || 'N/A',
+        cliente: o.cliente || 'Mostrador',
+        items,
+        subtotal,
+        descuento,
+        total,
+        efectivo,
+        cambio,
+      })
+    } catch {
+      toast('Error al cargar datos del recibo', 'error')
+    }
+  }
+
+  const btnEstilo = { padding: '3px 8px', fontSize: '.7rem', borderRadius: 6 }
 
   async function toggleDetalle(ordenId) {
     if (detalleId === ordenId) { setDetalleId(null); return }
@@ -789,6 +881,7 @@ function AdminVentas({ toast }) {
                 <th>Cambio</th>
                 <th>Usuario</th>
                 <th>Fecha</th>
+                <th className="text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -817,10 +910,17 @@ function AdminVentas({ toast }) {
                   </td>
                   <td>{o.usuario || 'N/A'}</td>
                   <td>{new Date(o.fecha).toLocaleString('es-CO')}</td>
+                  <td className="text-right" style={{ whiteSpace: 'nowrap' }}>
+                    {o.estado === 'PAGADA' && (
+                      <button className="btn btn-secondary" style={btnEstilo} onClick={() => reimprimir(o.id)}>
+                        <Printer size={12} /> Recibo
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {filtrados.length === 0 && (
-                <tr><td colSpan="10" className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Aún no hay ventas registradas.</td></tr>
+                <tr><td colSpan="11" className="text-muted" style={{ textAlign: 'center', padding: '2rem' }}>Aún no hay ventas registradas.</td></tr>
               )}
             </tbody>
           </table>
