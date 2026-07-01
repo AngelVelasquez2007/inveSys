@@ -2,7 +2,7 @@ export function formatearCOP(valor) {
   return Number(valor).toLocaleString('es-CO', { style: 'currency', currency: 'COP' })
 }
 
-export function imprimirRecibo({ empresa, sucursal, ordenId, fecha, cajero, cliente, items, subtotal, descuento, total, efectivo, cambio }) {
+export function imprimirRecibo({ empresa, sucursal, ordenId, fecha, cajero, cliente, items, subtotal, descuento, total, efectivo, cambio }, ventana) {
   const now = new Date(fecha)
   const fechaStr = now.toLocaleDateString('es-CO')
   const horaStr = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })
@@ -19,7 +19,7 @@ export function imprimirRecibo({ empresa, sucursal, ordenId, fecha, cajero, clie
     ? `<tr><td colspan="2" style="text-align:right;padding-top:6px">Descuento</td><td style="text-align:right;padding-top:6px;color:#c00">-${formatearCOP(descuento)}</td></tr>`
     : ''
 
-  const win = window.open('', '_blank', 'width=380,height=600,menubar=no,toolbar=no,location=no')
+  const win = ventana || window.open('', '_blank', 'width=380,height=600,menubar=no,toolbar=no,location=no')
   if (!win) return
 
   win.document.write(`<!DOCTYPE html>

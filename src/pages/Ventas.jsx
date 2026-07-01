@@ -196,6 +196,9 @@ function OperadorPos({ toast, usuario }) {
     if (!suficiente) { toast('El dinero recibido debe cubrir el total', 'error'); return }
     if (cambio < 0) { toast('El dinero recibido es insuficiente', 'error'); return }
 
+    const win = window.open('', '_blank', 'width=380,height=600,menubar=no,toolbar=no,location=no')
+    if (!win) toast('Popup bloqueado. Reimprime el recibo desde la lista de ventas.', 'info')
+
     setCargandoVenta(true)
     try {
       const { data } = await api.post('/ordenes', {
@@ -219,13 +222,14 @@ function OperadorPos({ toast, usuario }) {
         total,
         efectivo: Number(dineroRecibido),
         cambio: Number(data.cambio) || 0,
-      })
+      }, win)
       setMostrandoPos(false)
       setCartItems([])
       setDineroRecibido('')
       setDescuentoId(null)
       load()
     } catch (err) {
+      if (win) win.close()
       toast(apiError(err), 'error')
     } finally {
       setCargandoVenta(false)
@@ -275,6 +279,8 @@ function OperadorPos({ toast, usuario }) {
   }
 
   async function reimprimir(ordenId) {
+    const win = window.open('', '_blank', 'width=380,height=600,menubar=no,toolbar=no,location=no')
+    if (!win) toast('Popup bloqueado. Reimprime desde la lista de ventas.', 'info')
     try {
       const res = await api.get(`/ordenes/${ordenId}`)
       const o = res.data
@@ -301,8 +307,9 @@ function OperadorPos({ toast, usuario }) {
         total,
         efectivo,
         cambio,
-      })
+      }, win)
     } catch {
+      if (win) win.close()
       toast('Error al cargar datos del recibo', 'error')
     }
   }
@@ -780,6 +787,8 @@ function AdminVentas({ toast, usuario }) {
   }
 
   async function reimprimir(ordenId) {
+    const win = window.open('', '_blank', 'width=380,height=600,menubar=no,toolbar=no,location=no')
+    if (!win) toast('Popup bloqueado. Reimprime desde la lista de ventas.', 'info')
     try {
       const res = await api.get(`/ordenes/${ordenId}`)
       const o = res.data
@@ -806,8 +815,9 @@ function AdminVentas({ toast, usuario }) {
         total,
         efectivo,
         cambio,
-      })
+      }, win)
     } catch {
+      if (win) win.close()
       toast('Error al cargar datos del recibo', 'error')
     }
   }
