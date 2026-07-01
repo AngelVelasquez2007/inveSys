@@ -17,6 +17,14 @@ import Setup from './pages/Setup.jsx'
 import ProtectedRoute from './components/ProtectedRoute.jsx'
 import { hayToken, getApiUrl } from './services/api.js'
 
+function getUsuario() {
+  try {
+    return JSON.parse(sessionStorage.getItem('usuario'))
+  } catch {
+    return null
+  }
+}
+
 export const ToastCtx = createContext(null)
 
 export function useToast() {
@@ -54,6 +62,14 @@ function ToastProvider({ children }) {
 function necesitaSetup() {
   const url = getApiUrl()
   return !url || url === '/api'
+}
+
+function AdminRoute({ children }) {
+  const usuario = getUsuario()
+  if (usuario?.rol !== 'ADMIN') {
+    return <Navigate to="/dashboard" replace />
+  }
+  return children
 }
 
 function PublicRoute({ children }) {
@@ -111,7 +127,7 @@ export default function App() {
           <Route path="ventas" element={<Ventas />} />
           <Route path="clientes" element={<Clientes />} />
           <Route path="inventario" element={<Inventario />} />
-          <Route path="auditoria" element={<Auditoria />} />
+          <Route path="auditoria" element={<AdminRoute><Auditoria /></AdminRoute>} />
           <Route path="sucursales" element={<Sucursales />} />
           <Route path="descuentos" element={<Descuentos />} />
           <Route path="configuracion" element={<Configuracion />} />

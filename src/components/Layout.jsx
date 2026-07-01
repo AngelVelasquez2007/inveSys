@@ -10,6 +10,7 @@ import {
   Megaphone,
   Package,
   Receipt,
+  Settings,
   ShieldCheck,
   Store,
   Users,
@@ -100,6 +101,7 @@ export default function Layout() {
     { to: '/inventario', label: 'Inventario', icon: Warehouse },
     { to: '/descuentos', label: 'Descuentos', icon: Megaphone },
     { to: '/sucursales', label: 'Sucursales', icon: Store },
+    { to: '/configuracion', label: 'Configuración', icon: Settings },
     ...(esAdmin
       ? [
           { to: '/auditoria', label: 'Auditoria', icon: ShieldCheck },
